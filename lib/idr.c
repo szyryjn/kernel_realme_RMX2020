@@ -3,9 +3,9 @@
 #include <linux/idr.h>
 #include <linux/slab.h>
 #include <linux/spinlock.h>
+#include <linux/xarray.h>
 
 DEFINE_PER_CPU(struct ida_bitmap *, ida_bitmap);
-static DEFINE_SPINLOCK(simple_ida_lock);
 
 int idr_alloc_cmn(struct idr *idr, void *ptr, unsigned long *index,
 		  unsigned long start, unsigned long end, gfp_t gfp,
@@ -462,8 +462,11 @@ int ida_alloc_range(struct ida *ida, unsigned int min, unsigned int max,
 		max = INT_MAX;
 
 again:
+	if (!ida_pre_get(ida, gfp_mask))
+		return -ENOMEM;
+
 	xa_lock_irqsave(&ida->ida_rt, flags);
-	ret = ida_get_new_above(ida, min, &id);
+	ret = ida_get_new_above(ida, start, &id);
 	if (!ret) {
 		if (id > max) {
 			ida_remove(ida, id);
@@ -472,7 +475,7 @@ again:
 			ret = id;
 		}
 	}
-	spin_unlock_irqrestore(&simple_ida_lock, flags);
+	xa_unlock_irqrestore(&ida->ida_rt, flags);
 
 	if (unlikely(ret == -EAGAIN)) {
 		if (!ida_pre_get(ida, gfp))
@@ -498,8 +501,8 @@ void ida_free(struct ida *ida, unsigned int id)
 	if ((int)id < 0)
 		return;
 
-	spin_lock_irqsave(&simple_ida_lock, flags);
+	xa_lock_irqsave(&ida->ida_rt, flags);
 	ida_remove(ida, id);
-	spin_unlock_irqrestore(&simple_ida_lock, flags);
+	xa_unlock_irqrestore(&ida->ida_rt, flags);
 }
 EXPORT_SYMBOL(ida_free);
