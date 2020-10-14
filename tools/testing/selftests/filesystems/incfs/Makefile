@@ -2,7 +2,7 @@
 CFLAGS += -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -Wall
 CFLAGS += -I../.. -I../../../../..
 
-LDLIBS := -llz4 -lcrypto
+LDLIBS := -llz4 -lzstd -lcrypto
 EXTRA_SOURCES := utils.c
 TEST_GEN_PROGS := incfs_test
 

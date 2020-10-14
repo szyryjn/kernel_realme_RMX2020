@@ -12,6 +12,7 @@
 #include <linux/spinlock.h>
 #include <linux/completion.h>
 #include <linux/wait.h>
+#include <linux/zstd.h>
 #include <crypto/hash.h>
 
 #include <uapi/linux/incrementalfs.h>
@@ -154,6 +155,12 @@ struct mount_info {
 
 	void *pending_read_xattr;
 	size_t pending_read_xattr_size;
+
+	/* zstd workspace */
+	struct mutex mi_zstd_workspace_mutex;
+	void *mi_zstd_workspace;
+	ZSTD_DStream *mi_zstd_stream;
+	struct delayed_work mi_zstd_cleanup_work;
 };
 
 struct data_file_block {
@@ -164,7 +171,6 @@ struct data_file_block {
 	enum incfs_compression_alg db_comp_alg;
 };
 
-struct pending_read {
 	incfs_uuid_t file_id;
 
 	s64 timestamp_us;

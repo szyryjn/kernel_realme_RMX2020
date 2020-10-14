@@ -2,6 +2,7 @@ config INCREMENTAL_FS
 	tristate "Incremental file system support"
 	depends on BLOCK
 	select DECOMPRESS_LZ4
+	select DECOMPRESS_ZSTD
 	select CRC32
 	select CRYPTO
 	select CRYPTO_RSA
