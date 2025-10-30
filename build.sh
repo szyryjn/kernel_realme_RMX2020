@@ -93,7 +93,7 @@ function KERNEL_RESULT() {
 
 	# Create anykernel
 	rm -rf anykernel
-	git clone https://github.com/sarthakroy2002/AnyKernel3.git anykernel
+	https://github.com/muhammmadnantaa-hub/AnyKernel.git anykernel
 
 	# Copying image
 	cp ${KERNEL_PATH}/Image.gz-dtb anykernel/
