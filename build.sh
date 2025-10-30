@@ -6,9 +6,9 @@ set -e
 KERNEL_PATH=out/arch/arm64/boot
 
 # Set kernel name
-BUILD_TYPE="SUKISU
+BUILD_TYPE="ALPHA"
 DATE="$(TZ=Asia/Jakarta date +%Y%m%d%H%M%S)"
-KERNEL_NAME="SukiSuA16${BUILD_TYPE}-${DATE}.zip"
+KERNEL_NAME="rethinking${BUILD_TYPE}-${DATE}.zip"
 
 function KERNEL_COMPILE() {
 	if [ "$1" == "install" ]; then
@@ -18,8 +18,8 @@ function KERNEL_COMPILE() {
 
 	# Set environment variables
 	export USE_CCACHE=1
-	export KBUILD_BUILD_HOST=noevdvm
-	export KBUILD_BUILD_USER=gcorprjkt
+	export KBUILD_BUILD_HOST=gcorprjkt
+	export KBUILD_BUILD_USER=noevdvm
 
 	# Create output directory and do a clean build
 	rm -rf out && mkdir -p out
