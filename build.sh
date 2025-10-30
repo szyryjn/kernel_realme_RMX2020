@@ -18,8 +18,8 @@ function KERNEL_COMPILE() {
 
 	# Set environment variables
 	export USE_CCACHE=1
-	export KBUILD_BUILD_HOST=gcorpjkt
-	export KBUILD_BUILD_USER=noevdv
+	export KBUILD_BUILD_HOST=noevdvm
+	export KBUILD_BUILD_USER=gcorprjkt
 
 	# Create output directory and do a clean build
 	rm -rf out && mkdir -p out
