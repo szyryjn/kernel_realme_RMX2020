@@ -6,9 +6,9 @@ set -e
 KERNEL_PATH=out/arch/arm64/boot
 
 # Set kernel name
-BUILD_TYPE="ALPHA"
+BUILD_TYPE="SUKISU
 DATE="$(TZ=Asia/Jakarta date +%Y%m%d%H%M%S)"
-KERNEL_NAME="rethinking${BUILD_TYPE}-${DATE}.zip"
+KERNEL_NAME="SukiSuA16${BUILD_TYPE}-${DATE}.zip"
 
 function KERNEL_COMPILE() {
 	if [ "$1" == "install" ]; then
@@ -18,8 +18,8 @@ function KERNEL_COMPILE() {
 
 	# Set environment variables
 	export USE_CCACHE=1
-	export KBUILD_BUILD_HOST=gcorprjkt
-	export KBUILD_BUILD_USER=noevdvm
+	export KBUILD_BUILD_HOST=gcorprojkt
+	export KBUILD_BUILD_USER=nvevdn
 
 	# Create output directory and do a clean build
 	rm -rf out && mkdir -p out
@@ -93,7 +93,7 @@ function KERNEL_RESULT() {
 
 	# Create anykernel
 	rm -rf anykernel
-	https://github.com/muhammmadnantaa-hub/AnyKernel.git anykernel
+	git clone https://github.com/sarthakroy2002/AnyKernel3.git anykernel
 
 	# Copying image
 	cp ${KERNEL_PATH}/Image.gz-dtb anykernel/
