@@ -846,6 +846,25 @@ static void smap_gather_stats(struct vm_area_struct *vma,
 #endif
 	/* mmap_sem is held in m_start */
 	walk_page_vma(vma, &smaps_walk);
+
+        
+        if (!rollup_mode) {
+                show_map_vma(m, vma, is_pid);
+                if (vma_get_anon_name(vma)) {
+                        seq_puts(m, "Name:           ");
+                        seq_print_vma_name(m, vma);
+                        seq_putc(m, '\n');
+                }
+        } else if (last_vma) {
+                show_vma_header_prefix(
+                        m, mss->first_vma_start, vma->vm_end, 0, 0, 0, 0);
+                seq_pad(m, ' ');
+                seq_puts(m, "[rollup]\n");
+        } else {
+                ret = SEQ_SKIP;
+        }
+
+        if (!rollup_mode)
 }
 
 /* Show the contents common for smaps and smaps_rollup */
@@ -915,7 +934,6 @@ static int show_smap(struct seq_file *m, void *v)
 		m_cache_vma(m, vma);
 		return 0;
 	}
-	#endif /*VENDOR_EDIT*/
 
 	show_map_vma(m, vma);
 	if (vma_get_anon_name(vma)) {
@@ -924,7 +942,6 @@ static int show_smap(struct seq_file *m, void *v)
 		seq_putc(m, '\n');
 	}
 
-	if (!rollup_mode)
 #ifdef CONFIG_KSU_SUSFS_SUS_MAP
 		if (vma->vm_file &&
 			unlikely(file_inode(vma->vm_file)->i_mapping->flags & BIT_SUS_MAPS) &&
