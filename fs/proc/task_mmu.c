@@ -313,6 +313,7 @@ static int proc_map_release(struct inode *inode, struct file *file)
 		mmdrop(priv->mm);
 
 	kfree(priv->rollup);
+
 	return seq_release_private(inode, file);
 }
 
