@@ -97,10 +97,6 @@
 #ifdef CONFIG_HARDWALL
 #include <asm/hardwall.h>
 #endif
-#if defined(OPLUS_FEATURE_VIRTUAL_RESERVE_MEMORY) && defined(CONFIG_VIRTUAL_RESERVE_MEMORY)
-//Peifeng.Li@PSW.Kernel.BSP.Memory, 2020/04/22,virtual reserve memory
-#include <linux/vm_anti_fragment.h>
-#endif
 #include <trace/events/oom.h>
 #include "internal.h"
 #include "fd.h"
@@ -109,27 +105,16 @@
 #endif
 
 #include "../../lib/kstrtox.h"
-
-#ifdef OPLUS_FEATURE_HEALTHINFO
-// Liujie.Xie@TECH.Kernel.Sched, 2019/08/29, add for jank monitor
-#ifdef CONFIG_OPPO_JANK_INFO
-#include <linux/oppo_healthinfo/oppo_jank_monitor.h>
-#endif
-#endif /* OPLUS_FEATURE_HEALTHINFO */
-
 #ifdef VENDOR_EDIT
 /* Wen.Luo@BSP.Kernel.Stability, 2019/04/26, Add for Process memory statistics */
 extern size_t get_ion_heap_by_pid(pid_t pid);
 extern int get_gl_mem_by_pid(pid_t pid);
 #endif
-
-#ifdef OPLUS_FEATURE_UIFIRST
-// XieLiujie@BSP.KERNEL.PERFORMANCE, 2020/05/25, Add for UIFirst
+#ifdef VENDOR_EDIT
+// Liujie.Xie@TECH.Kernel.Sched, 2019/05/22, add for ui first
 #define GLOBAL_SYSTEM_UID KUIDT_INIT(1000)
 #define GLOBAL_SYSTEM_GID KGIDT_INIT(1000)
-extern const struct file_operations proc_static_ux_operations;
-extern bool is_special_entry(struct dentry *dentry, const char* special_proc);
-#endif /* OPLUS_FEATURE_UIFIRST */
+#endif
 
 /* NOTE:
  *	Implementing inode permission operations in /proc is almost
@@ -1042,6 +1027,83 @@ static const struct file_operations proc_mem_operations = {
 	.release	= mem_release,
 };
 
+#ifdef VENDOR_EDIT
+// Liujie.Xie@TECH.Kernel.Sched, 2019/05/22, add for ui first
+static int proc_static_ux_show(struct seq_file *m, void *v)
+{
+    struct inode *inode = m->private;
+    struct task_struct *p;
+    p = get_proc_task(inode);
+    if (!p) {
+        return -ESRCH;
+    }
+    task_lock(p);
+    seq_printf(m, "%d\n", p->static_ux);
+    task_unlock(p);
+    put_task_struct(p);
+    return 0;
+}
+
+static int proc_static_ux_open(struct inode* inode, struct file *filp)
+{
+    return single_open(filp, proc_static_ux_show, inode);
+}
+
+static ssize_t proc_static_ux_write(struct file *file, const char __user *buf,
+                size_t count, loff_t *ppos)
+{
+    struct task_struct *task;
+    char buffer[PROC_NUMBUF];
+    int err, static_ux;
+
+    memset(buffer, 0, sizeof(buffer));
+    if (count > sizeof(buffer) - 1)
+        count = sizeof(buffer) - 1;
+    if (copy_from_user(buffer, buf, count)) {
+        return -EFAULT;
+    }
+
+    err = kstrtoint(strstrip(buffer), 0, &static_ux);
+    if(err) {
+        return err;
+    }
+    task = get_proc_task(file_inode(file));
+    if (!task) {
+        return -ESRCH;
+    }
+
+    task->static_ux = static_ux != 0 ? 1 : 0;
+
+    put_task_struct(task);
+    return count;
+}
+
+static ssize_t proc_static_ux_read(struct file* file, char __user *buf,
+							    size_t count, loff_t *ppos)
+{
+	char buffer[PROC_NUMBUF];
+	struct task_struct *task = NULL;
+	int static_ux = -1;
+	size_t len = 0;
+	task = get_proc_task(file_inode(file));
+	if (!task) {
+		return -ESRCH;
+	}
+	static_ux = task->static_ux;
+	put_task_struct(task);
+	len = snprintf(buffer, sizeof(buffer), "%d\n", static_ux);
+	return simple_read_from_buffer(buf, count, ppos, buffer, len);
+}
+
+static const struct file_operations proc_static_ux_operations = {
+	.open       = proc_static_ux_open,
+	.write      = proc_static_ux_write,
+	.read       = proc_static_ux_read,
+	.llseek     = seq_lseek,
+	.release    = single_release,
+};
+#endif
+
 static int environ_open(struct inode *inode, struct file *file)
 {
 	return __mem_open(inode, file, PTRACE_MODE_READ);
@@ -1941,6 +2003,22 @@ int pid_getattr(const struct path *path, struct kstat *stat,
 	return 0;
 }
 
+#ifdef VENDOR_EDIT
+// Liujie.Xie@TECH.Kernel.Sched, 2019/05/22, add for ui first
+bool is_special_entry(struct dentry *dentry, const char* special_proc)
+{
+    const unsigned char *name;
+    if (NULL == dentry || NULL == special_proc)
+        return false;
+
+    name = dentry->d_name.name;
+    if (NULL != name && !strncmp(special_proc, name, 32))
+        return true;
+    else
+        return false;
+}
+#endif
+
 /* dentry stuff */
 
 /*
@@ -1966,13 +2044,13 @@ int pid_revalidate(struct dentry *dentry, unsigned int flags)
 	if (task) {
 		task_dump_owner(task, inode->i_mode, &inode->i_uid, &inode->i_gid);
 
-#ifdef OPLUS_FEATURE_UIFIRST
-// XieLiujie@BSP.KERNEL.PERFORMANCE, 2020/05/25, Add for UIFirst
+#ifdef VENDOR_EDIT
+// Liujie.Xie@TECH.Kernel.Sched, 2019/05/22, add for ui first
 		if (is_special_entry(dentry, "static_ux")) {
 			inode->i_uid = GLOBAL_SYSTEM_UID;
 			inode->i_gid = GLOBAL_SYSTEM_GID;
 		}
-#endif /* OPLUS_FEATURE_UIFIRST */
+#endif
 		inode->i_mode &= ~(S_ISUID | S_ISGID);
 		security_task_to_inode(task, inode);
 		put_task_struct(task);
@@ -3079,40 +3157,11 @@ static int proc_pid_patch_state(struct seq_file *m, struct pid_namespace *ns,
 }
 #endif /* CONFIG_LIVEPATCH */
 
-#ifdef CONFIG_MTK_TASK_TURBO
-static int proc_turbo_task_show(struct seq_file *m, struct pid_namespace *ns,
-		struct pid *pid, struct task_struct *p)
-{
-	unsigned int is_turbo;
-	unsigned int is_inherit_turbo;
-
-	if (!p)
-		return -ESRCH;
-	task_lock(p);
-	is_turbo = p->turbo;
-	is_inherit_turbo = atomic_read(&p->inherit_types);
-	seq_printf(m, "tid=%d turbo = %d,inherit turbo = %d prio=%d bk_prio=%d\n",
-			p->pid, is_turbo, is_inherit_turbo,
-			p->prio, NICE_TO_PRIO(p->nice_backup));
-	task_unlock(p);
-	return 0;
-}
-#endif
-
 /*
  * Thread groups
  */
 static const struct file_operations proc_task_operations;
 static const struct inode_operations proc_task_inode_operations;
-
-#if defined(OPLUS_FEATURE_VIRTUAL_RESERVE_MEMORY) && defined(CONFIG_VIRTUAL_RESERVE_MEMORY)
-/* Kui.Zhang@PSW.TEC.KERNEL.Performance, 2019/03/18,
- * read the reserved mmaps and reserved area
- */
-extern int proc_pid_reserve_area(struct seq_file *m, struct pid_namespace *ns,
-		struct pid *pid, struct task_struct *task);
-extern const struct file_operations proc_pid_rmaps_operations;
-#endif
 
 static const struct pid_entry tgid_base_stuff[] = {
 	DIR("task",       S_IRUGO|S_IXUGO, proc_task_inode_operations, proc_task_operations),
@@ -3142,20 +3191,6 @@ static const struct pid_entry tgid_base_stuff[] = {
 	ONE("stat",       S_IRUGO, proc_tgid_stat),
 	ONE("statm",      S_IRUGO, proc_pid_statm),
 	REG("maps",       S_IRUGO, proc_pid_maps_operations),
-#if defined(OPLUS_FEATURE_VIRTUAL_RESERVE_MEMORY) && defined(CONFIG_VIRTUAL_RESERVE_MEMORY)
-	/* Kui.Zhang@PSW.TEC.KERNEL.Performance, 2019/03/18,
-	 * read the reserved mmaps
-	 */
-	REG("reserve_maps", S_IRUSR, proc_pid_rmaps_operations),
-	ONE("reserve_area", S_IRUSR, proc_pid_reserve_area),
-#endif
-#if defined(OPLUS_FEATURE_VIRTUAL_RESERVE_MEMORY) && defined(CONFIG_VIRTUAL_RESERVE_MEMORY)
-/* Peifeng.Li@PSW.TEC.KERNEL.Performance, 2019/12/30,
- * read the vm_search_two_way
- */
-	ONE("vm_search_two_way", S_IRUSR, proc_pid_search_two_way),
-#endif
-
 #ifdef CONFIG_NUMA
 	REG("numa_maps",  S_IRUGO, proc_pid_numa_maps_operations),
 #endif
@@ -3232,19 +3267,10 @@ static const struct pid_entry tgid_base_stuff[] = {
 #ifdef CONFIG_CPU_FREQ_TIMES
 	ONE("time_in_state", 0444, proc_time_in_state_show),
 #endif
-
-#ifdef OPLUS_FEATURE_HEALTHINFO
-// Liujie.Xie@TECH.Kernel.Sched, 2019/08/29, add for jank monitor
-#ifdef CONFIG_OPPO_JANK_INFO
-	REG("jank_info", S_IRUGO | S_IWUGO, proc_jank_trace_operations),
-#endif
-#endif /* OPLUS_FEATURE_HEALTHINFO */
-
 #ifdef VENDOR_EDIT
 /* Wen.Luo@BSP.Kernel.Stability, 2019/04/26, Add for Process memory statistics */
 	REG("real_phymemory",    S_IRUGO, proc_pid_real_phymemory_ops),
 #endif
-
 };
 
 static int proc_tgid_base_readdir(struct file *file, struct dir_context *ctx)
@@ -3258,15 +3284,6 @@ static const struct file_operations proc_tgid_base_operations = {
 	.iterate_shared	= proc_tgid_base_readdir,
 	.llseek		= generic_file_llseek,
 };
-
-struct pid *tgid_pidfd_to_pid(const struct file *file)
-{
-	if (!d_is_dir(file->f_path.dentry) ||
-	    (file->f_op != &proc_tgid_base_operations))
-		return ERR_PTR(-EBADF);
-
-	return proc_pid(file_inode(file));
-}
 
 static struct dentry *proc_tgid_base_lookup(struct inode *dir, struct dentry *dentry, unsigned int flags)
 {
@@ -3576,12 +3593,12 @@ static const struct pid_entry tid_base_stuff[] = {
 	REG("cmdline",   S_IRUGO, proc_pid_cmdline_ops),
 	ONE("stat",      S_IRUGO, proc_tid_stat),
 	ONE("statm",     S_IRUGO, proc_pid_statm),
-	REG("maps",      S_IRUGO, proc_pid_maps_operations),
+	REG("maps",      S_IRUGO, proc_tid_maps_operations),
 #ifdef CONFIG_PROC_CHILDREN
 	REG("children",  S_IRUGO, proc_tid_children_operations),
 #endif
 #ifdef CONFIG_NUMA
-	REG("numa_maps", S_IRUGO, proc_pid_numa_maps_operations),
+	REG("numa_maps", S_IRUGO, proc_tid_numa_maps_operations),
 #endif
 	REG("mem",       S_IRUSR|S_IWUSR, proc_mem_operations),
 	LNK("cwd",       proc_cwd_link),
@@ -3591,7 +3608,7 @@ static const struct pid_entry tid_base_stuff[] = {
 	REG("mountinfo",  S_IRUGO, proc_mountinfo_operations),
 #ifdef CONFIG_PROC_PAGE_MONITOR
 	REG("clear_refs", S_IWUSR, proc_clear_refs_operations),
-	REG("smaps",     S_IRUGO, proc_pid_smaps_operations),
+	REG("smaps",     S_IRUGO, proc_tid_smaps_operations),
 	REG("smaps_rollup", S_IRUGO, proc_pid_smaps_rollup_operations),
 	REG("pagemap",    S_IRUSR, proc_pagemap_operations),
 #endif
@@ -3648,19 +3665,14 @@ static const struct pid_entry tid_base_stuff[] = {
 #ifdef CONFIG_CPU_FREQ_TIMES
 	ONE("time_in_state", 0444, proc_time_in_state_show),
 #endif
-
-#ifdef CONFIG_MTK_TASK_TURBO
-	ONE("turbo", 0444, proc_turbo_task_show),
-#endif
-
 #ifdef VENDOR_EDIT
 /* Wen.Luo@BSP.Kernel.Stability, 2019/04/26, Add for Process memory statistics */
 	REG("real_phymemory",   S_IRUGO, proc_pid_real_phymemory_ops),
 #endif
-#ifdef OPLUS_FEATURE_UIFIRST
-// XieLiujie@BSP.KERNEL.PERFORMANCE, 2020/05/25, Add for UIFirst
-	REG("static_ux", S_IRUGO | S_IWUGO, proc_static_ux_operations),
-#endif /* OPLUS_FEATURE_UIFIRST */
+#ifdef VENDOR_EDIT
+// Liujie.Xie@TECH.Kernel.Sched, 2019/05/22, add for ui first
+        REG("static_ux", S_IRUGO | S_IWUSR, proc_static_ux_operations),
+#endif  
 };
 
 static int proc_tid_base_readdir(struct file *file, struct dir_context *ctx)
