@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set kernel name
-BUILD_FOR="A13"
+BUILD_FOR="A15"
 DATE="$(TZ=Asia/India date +%Y%m%d)"
 KERNEL_NAME="KSU-NEXT${BUILD_FOR}-${DATE}.zip"
 
@@ -32,7 +32,7 @@ make -j$(nproc --all) O=out \
 function zipping()
 {
 rm -rf AnyKernel
-git clone --depth=1 https://github.com/szyryjn/AnyKernel3.git AnyKernel
+git clone -b RMX2020-KSUN --depth=1 https://github.com/szyryjn/AnyKernel3.git AnyKernel
 cp out/arch/arm64/boot/Image.gz-dtb AnyKernel
 cd AnyKernel
 (zip -r9 "$KERNEL_NAME" *)
