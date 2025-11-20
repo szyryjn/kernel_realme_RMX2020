@@ -54,7 +54,7 @@ static inline struct group_info *get_group_info(struct group_info *gi)
  */
 #define put_group_info(group_info)			\
 do {							\
-	if (atomic_dec_and_test(&(group_info)->usage))	\
+	if (atomic_long_dec_and_test(&(group_info)->usage))	\
 		groups_free(group_info);		\
 } while (0)
 

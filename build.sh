@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set kernel name
-BUILD_FOR="A15"
+BUILD_FOR="-A15"
 DATE="$(TZ=Asia/India date +%Y%m%d)"
 KERNEL_NAME="KSU-NEXT${BUILD_FOR}-${DATE}.zip"
 
