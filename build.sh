@@ -5,6 +5,9 @@ BUILD_FOR="-A15"
 DATE="$(TZ=Asia/India date +%Y%m%d)"
 KERNEL_NAME="KSU-NEXT${BUILD_FOR}-${DATE}.zip"
 
+# Add KernelSU-Next in Kernel Source
+if [ ! -d "KernelSU-NEXT" ]; then curl -LSs "https://raw.githubusercontent.com/szyryjn/KSUN-SZYRYJN/next/kernel/setup.sh" | bash -s next; fi
+
 function compile() 
 {
 rm -rf AnyKernel
@@ -14,7 +17,7 @@ export ARCH=arm64
 export KBUILD_BUILD_HOST=WildMoon
 export KBUILD_BUILD_USER="szyryjn"
 if [ ! -d "clang" ]; then
-    git clone --depth=1 https://android.googlesource.com/platform//prebuilts/clang/host/linux-x86/+archive/1ab7c4ac121885e76bb58ba77e5cef8aca3c2881/clang-r498229b.tar.gz -O "aosp-clang.tar.gz"
+    wget https://android.googlesource.com/platform//prebuilts/clang/host/linux-x86/+archive/1ab7c4ac121885e76bb58ba77e5cef8aca3c2881/clang-r498229b.tar.gz -O "aosp-clang.tar.gz"
     mkdir clang && tar -xf aosp-clang.tar.gz -C clang && rm -rf aosp-clang.tar.gz
 fi
 

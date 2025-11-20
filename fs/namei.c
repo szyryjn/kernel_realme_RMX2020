@@ -46,10 +46,8 @@
 #include "internal.h"
 #include "mount.h"
 
-<<<<<<< HEAD
 #define CREATE_TRACE_POINTS
 #include <trace/events/namei.h>
-=======
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
 extern bool susfs_is_sus_android_data_d_name_found(const char *d_name);
 extern bool susfs_is_sus_sdcard_d_name_found(const char *d_name);
@@ -58,7 +56,6 @@ extern bool susfs_is_base_dentry_android_data_dir(struct dentry* base);
 extern bool susfs_is_base_dentry_sdcard_dir(struct dentry* base);
 extern const struct qstr susfs_fake_qstr_name;
 #endif
->>>>>>> 67c7a8707fdd (implement susfs-1.5.11)
 
 /* [Feb-1997 T. Schoebel-Theuer]
  * Fundamental changes in the pathname lookup mechanisms (namei)
