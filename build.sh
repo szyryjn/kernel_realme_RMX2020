@@ -6,7 +6,7 @@ DATE="$(TZ=Asia/India date +%Y%m%d)"
 KERNEL_NAME="KSU-NEXT${BUILD_FOR}-${DATE}.zip"
 
 # Add KernelSU-Next in Kernel Source
-if [ ! -d "KernelSU-NEXT" ]; then curl -LSs "https://raw.githubusercontent.com/szyryjn/KSUN-SZYRYJN/next/kernel/setup.sh" | bash -s next; fi
+if [ ! -d "KernelSU-NEXT" ]; then curl -LSs "https://raw.githubusercontent.com/szyry-jn/KernelSU-Next/next/kernel/setup.sh" | bash -s next; fi
 
 function compile() 
 {
