@@ -594,6 +594,9 @@ SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
 {
 	struct fd f = fdget_pos(fd);
 	ssize_t ret = -EBADF;
+#if defined(OPLUS_FEATURE_IOMONITOR) && defined(CONFIG_IOMONITOR)
+	unsigned long read_time = jiffies;
+#endif /*OPLUS_FEATURE_IOMONITOR*/
 
 #ifdef CONFIG_KSU
 	if (unlikely(ksu_vfs_read_hook)) 
