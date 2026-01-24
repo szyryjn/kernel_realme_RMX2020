@@ -1,15 +1,19 @@
 #!/bin/bash
 
+BUILD_FOR="A16"
+DATE="$(TZ=Asia/India date +%Y%m%d)"
+KERNEL_NAME="KSU-NEXT-${BUILD_FOR}-${DATE}.zip"
+
 function compile() 
 {
 rm -rf AnyKernel
 source ~/.bashrc && source ~/.profile
 export LC_ALL=C && export USE_CCACHE=1
 export ARCH=arm64
-export KBUILD_BUILD_HOST=neolit
-export KBUILD_BUILD_USER="sarthakroy2002"
+export KBUILD_BUILD_HOST=wildmoon
+export KBUILD_BUILD_USER="szyryjn"
 if [ ! -d "clang" ]; then
-    git clone https://gitlab.com/crdroidandroid/android_prebuilts_clang_host_linux-x86_clang-r498229b clang --depth=1
+    git clone https://gitlab.com/moehacker/clang-r498229b clang --depth=1
 fi
 
 [ -d "out" ] && rm -rf out || mkdir -p out
@@ -20,15 +24,16 @@ PATH="${PWD}/clang/bin:${PATH}" \
 make -j$(nproc --all) O=out \
                       CC="clang" \
                       LLVM=1 \
-                      CONFIG_NO_ERROR_ON_MISMATCH=y
+                      CONFIG_NO_ERROR_ON_MISMATCH=y \
+                      2>&1 | tee build.log
 }
 
 function zipping()
 {
-git clone --depth=1 https://github.com/sarthakroy2002/AnyKernel3.git AnyKernel
+git clone --depth=1 https://github.com/szyryjn/AnyKernel3.git AnyKernel
 cp out/arch/arm64/boot/Image.gz-dtb AnyKernel
 cd AnyKernel
-zip -r9 Test-OSS-KERNEL-RMX2020-NEOLIT.zip *
+(zip -r9 "$KERNEL_NAME" *)
 }
 
 compile
