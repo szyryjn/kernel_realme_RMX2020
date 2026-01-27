@@ -2,7 +2,7 @@
 
 BUILD_FOR="A16"
 DATE="$(TZ=Asia/India date +%Y%m%d)"
-KERNEL_NAME="KSU-NEXT-${BUILD_FOR}-${DATE}.zip"
+KERNEL_NAME="WILD-KSU-${BUILD_FOR}-${DATE}.zip"
 
 function compile() 
 {
@@ -16,7 +16,7 @@ if [ ! -d "clang" ]; then
     git clone https://gitlab.com/moehacker/clang-r498229b clang --depth=1
 fi
 
-[ -d "out" ] && rm -rf out || mkdir -p out
+[ -d "out" ] || mkdir -p out
 
 make O=out ARCH=arm64 RMX2020_defconfig
 
@@ -30,7 +30,7 @@ make -j$(nproc --all) O=out \
 
 function zipping()
 {
-git clone --depth=1 https://github.com/szyryjn/AnyKernel3.git AnyKernel
+git clone -b RMX2020-WILD --depth=1 https://github.com/szyryjn/AnyKernel3.git AnyKernel
 cp out/arch/arm64/boot/Image.gz-dtb AnyKernel
 cd AnyKernel
 (zip -r9 "$KERNEL_NAME" *)
