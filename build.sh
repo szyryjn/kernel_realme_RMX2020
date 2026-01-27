@@ -16,7 +16,7 @@ if [ ! -d "clang" ]; then
     git clone https://gitlab.com/moehacker/clang-r498229b clang --depth=1
 fi
 
-[ -d "out" ] || mkdir -p out
+[ -d "out" ] && rm -rf out || mkdir -p out
 
 make O=out ARCH=arm64 RMX2020_defconfig
 
