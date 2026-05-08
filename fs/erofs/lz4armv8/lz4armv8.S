@@ -7,9 +7,9 @@
 #include <asm/assembler.h>
 
 /**
- * _lz4_decompress_asm: The fast LZ4 decompression, lz4 decompression algothrim asm
+ * _erofs_lz4_decompress_asm: The fast LZ4 decompression, lz4 decompression algothrim asm
  * routine,support Huawei EROFS filesystem striving for maximum decompression speed.
- * Entry point _lz4_decompress_asm.
+ * Entry point _erofs_lz4_decompress_asm.
  * @para:
  * x0 = current destination address ptr
  * x1 = destination start position
@@ -222,9 +222,9 @@ Copy_offset_ge_match_loop\@:
 .text
 .p2align 4
 
-ENTRY(_lz4_decompress_asm)
+ENTRY(_erofs_lz4_decompress_asm)
 	lz4_decompress_asm_generic
-ENDPROC(_lz4_decompress_asm)
+ENDPROC(_erofs_lz4_decompress_asm)
 
 Failed:
 	mov	tmp, #-1
@@ -284,6 +284,6 @@ Copylength_table:
 
 .text
 .p2align 4
-ENTRY(_lz4_decompress_asm_noprfm)
+ENTRY(_erofs_lz4_decompress_asm_noprfm)
 	lz4_decompress_asm_generic	0
-ENDPROC(_lz4_decompress_asm_noprfm)
+ENDPROC(_erofs_lz4_decompress_asm_noprfm)
